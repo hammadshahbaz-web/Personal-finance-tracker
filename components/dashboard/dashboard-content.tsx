@@ -15,6 +15,7 @@ import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Button } from "@/components/ui/button"
 import { Loader2, AlertCircle, Plus } from "lucide-react"
 import type { Transaction } from "@/lib/mock-data"
+import { SearchInput } from "./search-bar"
 
 export function DashboardContent() {
   const { user } = useAppSelector((state) => state.auth)
@@ -149,8 +150,9 @@ export function DashboardContent() {
                 totalCount={transactions.length}
               />
 
+              
               {/* Transaction List */}
-              <TransactionList
+              <TransactionList 
                 transactions={transactions}
                 activeFilter={activeFilter}
                 onEdit={handleEditTransaction}

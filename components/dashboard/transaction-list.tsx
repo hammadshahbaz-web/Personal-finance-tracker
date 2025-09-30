@@ -60,7 +60,7 @@ export function TransactionList({ transactions, activeFilter, onEdit, onDelete }
         </CardTitle>
       </CardHeader>
       <CardContent>
-        <div className="space-y-4">
+        <div className="max-h-[400px] overflow-y-auto space-y-4 pr-2">
           {filteredTransactions
             .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
             .map((transaction) => (
