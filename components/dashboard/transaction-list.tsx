@@ -4,8 +4,17 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Trash2, Edit, Calendar, Tag } from "lucide-react"
+import type { Transaction } from "@/lib/mock-data"
+import type { FilterType } from "./transaction-filters"
 
-function TransactionListComponent({ transactions, activeFilter, onEdit, onDelete }) {
+interface TransactionListProps {
+  transactions: Transaction[]
+  activeFilter: FilterType
+  onEdit?: (transaction: Transaction) => void
+  onDelete?: (transactionId: string) => void
+}
+
+function TransactionListComponent({ transactions, activeFilter, onEdit, onDelete }: TransactionListProps) {
 
   const filteredTransactions = useMemo(() => {
     return transactions.filter((transaction) => {
@@ -21,14 +30,14 @@ function TransactionListComponent({ transactions, activeFilter, onEdit, onDelete
   }, [filteredTransactions])
 
 
-  const formatCurrency = useCallback((amount) => {
+  const formatCurrency = useCallback((amount: number) => {
     return new Intl.NumberFormat("en-US", {
       style: "currency",
       currency: "USD",
     }).format(amount)
   }, [])
 
-  const formatDate = useCallback((dateString) => {
+  const formatDate = useCallback((dateString: string) => {
     return new Date(dateString).toLocaleDateString("en-US", {
       year: "numeric",
       month: "short",
@@ -68,21 +77,20 @@ function TransactionListComponent({ transactions, activeFilter, onEdit, onDelete
                 key={transaction.id}
                 className={`p-4 rounded-lg border-l-4 ${
                   transaction.type === "income"
-                    ? "border-l-green-500 bg-green-50"
+                    ? "border-l-green-500 bg-green-50 /* dark:bg-green-950/20*/"
                     : "border-l-red-500 bg-red-50 dark:bg-red-950/20"
                 }`}
               >
-                <div className="flex items-start justify-between gap-4">
-                  {/* Transaction Picture - Now properly positioned */}
-                  {transaction.picture && (
-                    <img
-                      src={transaction.picture}
-                      alt={transaction.description}
-                      className="w-16 h-16 rounded-md object-cover flex-shrink-0"
-                    />
-                  )}
-                  
-                  <div className="flex-1 min-w-0">
+                <div className="flex items-start justify-between">
+                   {/* ✅ Transaction Picture */}
+                {transaction.picture && (
+                  <img
+                    src={transaction.picture}
+                    alt={transaction.description}
+                    className="w-12 h-12 rounded-md object-cover mr-4"
+                  />
+                )}
+                  <div className="flex-1">
                     <div className="flex items-center gap-2 mb-2">
                       <h4 className="font-semibold text-foreground">{transaction.description}</h4>
                       <Badge
@@ -118,7 +126,7 @@ function TransactionListComponent({ transactions, activeFilter, onEdit, onDelete
                     </div>
                   </div>
 
-                  <div className="flex items-center gap-2 flex-shrink-0">
+                  <div className="flex items-center gap-2 ml-4">
                     {onEdit && (
                       <Button variant="ghost" size="sm" onClick={() => onEdit(transaction)} className="h-8 w-8 p-0">
                         <Edit className="h-4 w-4" />

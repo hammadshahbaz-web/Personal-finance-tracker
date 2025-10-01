@@ -237,7 +237,7 @@ function EditTransactionDialogComponent({
                 }
               }}
             />
-          
+
             {/* Preview if picture selected */}
             {picture && (
               <div className="mt-2">
