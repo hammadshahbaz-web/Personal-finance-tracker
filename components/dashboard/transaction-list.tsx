@@ -1,41 +1,43 @@
 "use client"
-
+import React, { useMemo, useCallback } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Trash2, Edit, Calendar, Tag } from "lucide-react"
-import type { Transaction } from "@/lib/mock-data"
-import type { FilterType } from "./transaction-filters"
 
-interface TransactionListProps {
-  transactions: Transaction[]
-  activeFilter: FilterType
-  onEdit?: (transaction: Transaction) => void
-  onDelete?: (transactionId: string) => void
-}
+function TransactionListComponent({ transactions, activeFilter, onEdit, onDelete }) {
 
-export function TransactionList({ transactions, activeFilter, onEdit, onDelete }: TransactionListProps) {
-  const filteredTransactions = transactions.filter((transaction) => {
-    if (activeFilter === "all") return true
-    return transaction.type === activeFilter
-  })
+  const filteredTransactions = useMemo(() => {
+    return transactions.filter((transaction) => {
+      if (activeFilter === "all") return true
+      return transaction.type === activeFilter
+    })
+  }, [transactions, activeFilter])
 
-  const formatCurrency = (amount: number) => {
+  const sortedTransactions = useMemo(() => {
+    return [...filteredTransactions].sort(
+      (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()
+    )
+  }, [filteredTransactions])
+
+
+  const formatCurrency = useCallback((amount) => {
     return new Intl.NumberFormat("en-US", {
       style: "currency",
       currency: "USD",
     }).format(amount)
-  }
+  }, [])
 
-  const formatDate = (dateString: string) => {
+  const formatDate = useCallback((dateString) => {
     return new Date(dateString).toLocaleDateString("en-US", {
       year: "numeric",
       month: "short",
       day: "numeric",
     })
-  }
+  }, [])
 
-  if (filteredTransactions.length === 0) {
+
+  if (sortedTransactions.length === 0) {
     return (
       <Card>
         <CardHeader>
@@ -61,19 +63,26 @@ export function TransactionList({ transactions, activeFilter, onEdit, onDelete }
       </CardHeader>
       <CardContent>
         <div className="max-h-[400px] overflow-y-auto space-y-4 pr-2">
-          {filteredTransactions
-            .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
-            .map((transaction) => (
+          {sortedTransactions.map((transaction) => (
               <div
                 key={transaction.id}
                 className={`p-4 rounded-lg border-l-4 ${
                   transaction.type === "income"
-                    ? "border-l-green-500 bg-green-50 /* dark:bg-green-950/20*/"
+                    ? "border-l-green-500 bg-green-50"
                     : "border-l-red-500 bg-red-50 dark:bg-red-950/20"
                 }`}
               >
-                <div className="flex items-start justify-between">
-                  <div className="flex-1">
+                <div className="flex items-start justify-between gap-4">
+                  {/* Transaction Picture - Now properly positioned */}
+                  {transaction.picture && (
+                    <img
+                      src={transaction.picture}
+                      alt={transaction.description}
+                      className="w-16 h-16 rounded-md object-cover flex-shrink-0"
+                    />
+                  )}
+                  
+                  <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 mb-2">
                       <h4 className="font-semibold text-foreground">{transaction.description}</h4>
                       <Badge
@@ -109,7 +118,7 @@ export function TransactionList({ transactions, activeFilter, onEdit, onDelete }
                     </div>
                   </div>
 
-                  <div className="flex items-center gap-2 ml-4">
+                  <div className="flex items-center gap-2 flex-shrink-0">
                     {onEdit && (
                       <Button variant="ghost" size="sm" onClick={() => onEdit(transaction)} className="h-8 w-8 p-0">
                         <Edit className="h-4 w-4" />
@@ -134,3 +143,4 @@ export function TransactionList({ transactions, activeFilter, onEdit, onDelete }
     </Card>
   )
 }
+export const TransactionList = React.memo(TransactionListComponent)

@@ -32,7 +32,7 @@ export async function PUT(request: NextRequest, { params }: { params: { id: stri
     }
 
     const body = await request.json()
-    const { type, amount, description, category, date } = body
+    const { type, amount, description, category, date, picture} = body
 
     const existingTransactions = mockDatabase.transactions.findByUserId(userId)
     const transaction = existingTransactions.find((txn) => txn.id === params.id)
@@ -47,6 +47,7 @@ export async function PUT(request: NextRequest, { params }: { params: { id: stri
       description,
       category,
       date,
+      picture,  
     })
 
     return NextResponse.json({

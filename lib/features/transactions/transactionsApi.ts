@@ -8,6 +8,8 @@ export interface CreateTransactionRequest {
   description: string
   category: string
   date: string
+  picture?: string | null
+
 }
 
 export interface TransactionsResponse {

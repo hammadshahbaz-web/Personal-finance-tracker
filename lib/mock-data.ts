@@ -48,6 +48,7 @@ export interface Transaction {
   category: string
   date: string
   createdAt: string
+  picture?: string | null 
 }
 
 export const mockTransactions: Transaction[] = [
@@ -60,6 +61,7 @@ export const mockTransactions: Transaction[] = [
     category: "Salary",
     date: "2025-01-01",
     createdAt: "2025-01-01T10:00:00Z",
+    picture: "https://cdn-icons-png.flaticon.com/512/3135/3135673.png",
   },
   {
     id: "txn_002",
@@ -70,6 +72,7 @@ export const mockTransactions: Transaction[] = [
     category: "Housing",
     date: "2025-01-01",
     createdAt: "2025-01-01T14:00:00Z",
+    picture: "https://cdn-icons-png.flaticon.com/512/3104/3104004.png"
   },
   {
     id: "txn_003",
@@ -80,6 +83,8 @@ export const mockTransactions: Transaction[] = [
     category: "Food",
     date: "2025-01-02",
     createdAt: "2025-01-02T16:00:00Z",
+    picture: "https://cdn-icons-png.flaticon.com/512/3075/3075977.png",
+
   },
   {
     id: "txn_004",
@@ -90,6 +95,8 @@ export const mockTransactions: Transaction[] = [
     category: "Freelance",
     date: "2025-01-03",
     createdAt: "2025-01-03T12:00:00Z",
+    picture: "https://cdn-icons-png.flaticon.com/512/942/942748.png",
+
   },
   {
     id: "txn_005",
@@ -100,6 +107,8 @@ export const mockTransactions: Transaction[] = [
     category: "Utilities",
     date: "2025-01-05",
     createdAt: "2025-01-05T09:00:00Z",
+    picture: "https://cdn-icons-png.flaticon.com/512/2920/2920322.png",
+
   },
 ]
 
@@ -113,7 +122,7 @@ export const mockDatabase = {
   },
   transactions: {
     findByUserId: (userId: string) => transactions.filter((txn) => txn.userId === userId),
-    create: (transaction: Omit<Transaction, "id" | "createdAt">) => {
+    create: (transaction: Omit<Transaction, "id" | "createdAt"> & { picture?: string | null }) => {
       const newTransaction: Transaction = {
         ...transaction,
         id: `txn_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,

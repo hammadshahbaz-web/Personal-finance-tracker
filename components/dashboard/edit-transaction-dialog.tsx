@@ -1,18 +1,32 @@
 "use client"
 
 import React, { useState, useEffect, useCallback, useMemo } from "react"
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Loader2, Plus } from "lucide-react"
-import { useCreateTransactionMutation } from "@/lib/features/transactions/transactionsApi"
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
+import { Loader2 } from "lucide-react"
+import { useUpdateTransactionMutation } from "@/lib/features/transactions/transactionsApi"
+import type { Transaction } from "@/lib/mock-data"
 
-interface TransactionFormProps {
-  onSuccess?: () => void
-  onCancel?: () => void
+interface EditTransactionDialogProps {
+  transaction: Transaction | null
+  open: boolean
+  onOpenChange: (open: boolean) => void
 }
 
 const categories: Record<"income" | "expense", string[]> = {
@@ -29,25 +43,38 @@ const categories: Record<"income" | "expense", string[]> = {
   ],
 }
 
-const TransactionFormComponent: React.FC<TransactionFormProps> = ({ onSuccess, onCancel }) => {
+function EditTransactionDialogComponent({
+  transaction,
+  open,
+  onOpenChange,
+}: EditTransactionDialogProps) {
   const [type, setType] = useState<"income" | "expense">("income")
   const [amount, setAmount] = useState("")
   const [description, setDescription] = useState("")
   const [category, setCategory] = useState("")
   const [date, setDate] = useState("")
+  const [picture, setPicture] = useState("")
   const [errors, setErrors] = useState<Record<string, string>>({})
 
-  const [createTransaction, { isLoading }] = useCreateTransactionMutation()
+  const [updateTransaction, { isLoading }] = useUpdateTransactionMutation()
 
+  // Memoized categories
   const typeCategories = useMemo(() => categories[type], [type])
-  const [picture, setPicture] = useState("")
 
-
-  // Reset category when type changes
+  // Populate form when transaction changes
   useEffect(() => {
-    setCategory("")
-  }, [type])
+    if (transaction) {
+      setType(transaction.type as "income" | "expense")
+      setAmount(String(transaction.amount))
+      setDescription(transaction.description)
+      setCategory(transaction.category)
+      setDate(transaction.date)
+      setPicture(transaction.picture ?? "")
+      setErrors({})
+    }
+  }, [transaction])
 
+  // Validation
   const validateForm = useCallback(() => {
     const newErrors: Record<string, string> = {}
 
@@ -61,24 +88,29 @@ const TransactionFormComponent: React.FC<TransactionFormProps> = ({ onSuccess, o
     return Object.keys(newErrors).length === 0
   }, [type, amount, description, category, date])
 
+  // Reset form
   const resetForm = useCallback(() => {
-    setType("income")
-    setAmount("")
-    setDescription("")
-    setCategory("")
-    setDate("")
+    if (transaction) {
+      setType(transaction.type as "income" | "expense")
+      setAmount(String(transaction.amount))
+      setDescription(transaction.description)
+      setCategory(transaction.category)
+      setDate(transaction.date)
+      setPicture(transaction.picture ?? "")
+    }
     setErrors({})
-    setPicture("")
+  }, [transaction])
 
-  }, [])
-
+  // Submit handler
   const handleSubmit = useCallback(
     async (e: React.FormEvent) => {
       e.preventDefault()
+      if (!transaction) return
       if (!validateForm()) return
 
       try {
-        await createTransaction({
+        await updateTransaction({
+          id: transaction.id,
           type,
           amount: Number.parseFloat(amount),
           description: description.trim(),
@@ -87,35 +119,34 @@ const TransactionFormComponent: React.FC<TransactionFormProps> = ({ onSuccess, o
           picture: picture.trim() || null,
         }).unwrap()
 
-        resetForm()
-        onSuccess?.()
+        onOpenChange(false)
       } catch (error) {
-        console.error("Add Transaction failed:", error)
+        console.error("Update Transaction failed:", error)
       }
     },
-    [type, amount, description, category, date, picture, createTransaction, validateForm, resetForm, onSuccess]
+    [transaction, type, amount, description, category, date, picture, updateTransaction, validateForm, onOpenChange]
   )
 
   const handleCancel = useCallback(() => {
     resetForm()
-    onCancel?.()
-  }, [resetForm, onCancel])
+    onOpenChange(false)
+  }, [resetForm, onOpenChange])
+
+  if (!transaction) return null
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          <Plus className="h-5 w-5" /> Add New Transaction
-        </CardTitle>
-        <CardDescription>Enter the details for your new transaction</CardDescription>
-      </CardHeader>
-      <CardContent>
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="sm:max-w-lg">
+        <DialogHeader>
+          <DialogTitle>Edit Transaction</DialogTitle>
+        </DialogHeader>
+
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {/* Transaction Type */}
+            {/* Type */}
             <div className="space-y-2">
               <Label htmlFor="type">Type</Label>
-              <Select value={type} onValueChange={(value: "income" | "expense") => setType(value)}>
+              <Select value={type} onValueChange={(v: "income" | "expense") => setType(v)}>
                 <SelectTrigger className={errors.type ? "border-destructive" : ""}>
                   <SelectValue placeholder="Select type" />
                 </SelectTrigger>
@@ -135,7 +166,6 @@ const TransactionFormComponent: React.FC<TransactionFormProps> = ({ onSuccess, o
                 type="number"
                 step="0.01"
                 min="0"
-                placeholder="0.00"
                 value={amount}
                 onChange={(e) => setAmount(e.target.value)}
                 className={errors.amount ? "border-destructive" : ""}
@@ -149,7 +179,6 @@ const TransactionFormComponent: React.FC<TransactionFormProps> = ({ onSuccess, o
             <Label htmlFor="description">Description</Label>
             <Textarea
               id="description"
-              placeholder="Enter transaction description"
               value={description}
               onChange={(e) => setDescription(e.target.value)}
               className={errors.description ? "border-destructive" : ""}
@@ -189,9 +218,10 @@ const TransactionFormComponent: React.FC<TransactionFormProps> = ({ onSuccess, o
               />
               {errors.date && <p className="text-sm text-destructive">{errors.date}</p>}
             </div>
-            {/* Picture Upload (Base64 only) */}
+
+            {/* Picture */}
           <div className="space-y-2">
-            <Label htmlFor="picture">Picture</Label>
+            <Label htmlFor="picture">Picture (optional)</Label>
             <Input
               id="picture"
               type="file"
@@ -201,47 +231,46 @@ const TransactionFormComponent: React.FC<TransactionFormProps> = ({ onSuccess, o
                 if (file) {
                   const reader = new FileReader()
                   reader.onloadend = () => {
-                    if (reader.result) {
-                      setPicture(reader.result.toString()) // store Base64 string
-                    }
+                    setPicture(reader.result as string) // stores base64 string
                   }
                   reader.readAsDataURL(file)
                 }
               }}
             />
-
-            {/* Preview */}
+          
+            {/* Preview if picture selected */}
             {picture && (
-              <img
-                src={picture}
-                alt="Preview"
-                className="w-20 h-20 mt-2 rounded-md object-cover border"
-              />
+              <div className="mt-2">
+                <img
+                  src={picture}
+                  alt="Preview"
+                  className="max-h-32 rounded border"
+                />
+              </div>
             )}
           </div>
 
           </div>
 
-          {/* Form Actions */}
-          <div className="flex items-center gap-2 pt-4">
-            <Button type="submit" disabled={isLoading} className="flex-1">
-              {isLoading ? (
-                <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Adding...
-                </>
-              ) : (
-                <>Add Transaction</>
-              )}
-            </Button>
+          <DialogFooter className="flex items-center gap-2 pt-4">
             <Button type="button" variant="outline" onClick={handleCancel} disabled={isLoading}>
               Cancel
             </Button>
-          </div>
+            <Button type="submit" disabled={isLoading}>
+              {isLoading ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Saving...
+                </>
+              ) : (
+                <>Save Changes</>
+              )}
+            </Button>
+          </DialogFooter>
         </form>
-      </CardContent>
-    </Card>
+      </DialogContent>
+    </Dialog>
   )
 }
 
-export const TransactionForm = React.memo(TransactionFormComponent)
+export const EditTransactionDialog = React.memo(EditTransactionDialogComponent)

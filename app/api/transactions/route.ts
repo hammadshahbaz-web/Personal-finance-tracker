@@ -54,7 +54,7 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json()
-    const { type, amount, description, category, date } = body
+    const { type, amount, description, category, date, picture } = body
 
     if (!type || !amount || !description || !category || !date) {
       return NextResponse.json({ success: false, message: "All fields are required" }, { status: 400 })
@@ -75,6 +75,7 @@ export async function POST(request: NextRequest) {
       description,
       category,
       date,
+      picture: picture ?? null,
     })
 
     return NextResponse.json({
